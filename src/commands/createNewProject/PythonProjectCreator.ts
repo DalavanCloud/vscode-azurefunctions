@@ -11,12 +11,13 @@ import { MessageItem, window } from 'vscode';
 import { DialogResponses, parseError, UserCancelledError } from 'vscode-azureextensionui';
 import { funcPackId, gitignoreFileName, isWindows, localSettingsFileName, Platform, ProjectRuntime, TemplateFilter } from "../../constants";
 import { ext } from '../../extensionVariables';
+import { funcHostCommand, funcHostTaskLabel } from "../../funcCoreTools/funcHostTask";
 import { validateFuncCoreToolsInstalled } from '../../funcCoreTools/validateFuncCoreToolsInstalled';
 import { azureWebJobsStorageKey, getLocalSettings, ILocalAppSettings } from '../../LocalAppSettings';
 import { localize } from "../../localize";
 import { cpUtils } from "../../utils/cpUtils";
 import * as fsUtil from '../../utils/fs';
-import { funcHostTaskId, funcWatchProblemMatcher } from "./IProjectCreator";
+import { funcWatchProblemMatcher } from "./IProjectCreator";
 import { ScriptProjectCreatorBase } from './ScriptProjectCreatorBase';
 
 export const funcEnvName: string = 'func_env';
@@ -43,7 +44,7 @@ export class PythonProjectCreator extends ScriptProjectCreatorBase {
                     request: 'attach',
                     port: 9091,
                     host: 'localhost',
-                    preLaunchTask: funcHostTaskId
+                    preLaunchTask: funcHostTaskLabel
                 }
             ]
         };
@@ -83,23 +84,21 @@ export class PythonProjectCreator extends ScriptProjectCreatorBase {
         // func pack task may fail with "The process cannot access the file because it is being used by another process." unless venv is in '.funcignore' file
         await this.ensureVenvInFuncIgnore();
         const funcPackCommand: string = 'func pack';
-        const funcHostStartCommand: string = 'func host start';
         const funcExtensionsCommand: string = 'func extensions install';
         return {
             version: '2.0.0',
             tasks: [
                 {
-                    label: localize('azFunc.runFuncHost', 'Run Functions Host'),
-                    identifier: funcHostTaskId,
+                    label: funcHostTaskLabel,
                     type: 'shell',
                     osx: {
-                        command: `${funcExtensionsCommand} && ${convertToVenvCommand(funcHostStartCommand, Platform.MacOS)}`
+                        command: `${funcExtensionsCommand} && ${convertToVenvCommand(funcHostCommand, Platform.MacOS)}`
                     },
                     windows: {
-                        command: `${funcExtensionsCommand} ; ${convertToVenvCommand(funcHostStartCommand, Platform.Windows)}`
+                        command: `${funcExtensionsCommand} ; ${convertToVenvCommand(funcHostCommand, Platform.Windows)}`
                     },
                     linux: {
-                        command: `${funcExtensionsCommand} && ${convertToVenvCommand(funcHostStartCommand, Platform.Linux)}`
+                        command: `${funcExtensionsCommand} && ${convertToVenvCommand(funcHostCommand, Platform.Linux)}`
                     },
                     isBackground: true,
                     presentation: {
@@ -115,7 +114,6 @@ export class PythonProjectCreator extends ScriptProjectCreatorBase {
                 },
                 {
                     label: funcPackId,
-                    identifier: funcPackId, // Until this is fixed, the label must be the same as the id: https://github.com/Microsoft/vscode/issues/57707
                     type: 'shell',
                     osx: {
                         command: convertToVenvCommand(funcPackCommand, Platform.MacOS)
